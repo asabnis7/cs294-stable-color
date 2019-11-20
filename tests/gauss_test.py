@@ -17,12 +17,11 @@ n_t = 10
 
 l_n = (l_i * ds / np.sqrt(2))
 
-mat = get_data_matrix(path='data/IMAGES.npy', l_patch=l_i,
-                      n_patches=10)
+#mat = get_data_matrix(path='data/IMAGES.npy', l_patch=l_i,
+#                      n_patches=10)
 
-s_gen = mat[3].astype('float32')
-s_gen = np.clip(s_gen, -1, 1)
-
+#s_gen = mat[3].astype('float32')
+#s_gen = np.clip(s_gen, -1, 1)
 
 
 emg = EMGauss(
