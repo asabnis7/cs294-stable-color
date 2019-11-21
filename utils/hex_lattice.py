@@ -26,10 +26,12 @@ def gen_hex_lattice(w, a=1.):
     
     return XE, YE
 
-def gen_color_lattice(w, a=1.):
+def gen_color_lattice(r, g, b, w, a=1.):
     """
     Fill a circle centered at the origin with radius w
-        with a hexagonal lattice nodes separted by a
+    with a hexagonal lattice nodes separted by a
+    Lattice cone type ratio is dependent on r,g,b 
+    values passed in; must add up to 1
     """
     L = 2 * w / a + 1
     i, j = np.meshgrid(np.arange(-L, L), np.arange(-L, L))
@@ -48,35 +50,20 @@ def gen_color_lattice(w, a=1.):
     XE, YE = XE + i0 * a, YE + i0 * a
     
     n = len(XE)
-    ratio = [int(n*0.47), int(n*0.47), int(n*0.06)]
-    #ratio = [int(n*0.9), int(n*0), int(n*0.1)]
-    #print ratio
-    color_ind = random.sample(range(0, n), n)
-    #print color_ind
+    ratio = [int(n*r), int(n*g), int(n*b)]
+    r = random.sample(range(0, n), n)
+    cones = [r[0:ratio[0]], r[ratio[0]:ratio[0]+ratio[1]], r[ratio[0]+ratio[1]:n]]
+   
+    XE = [XE[cones[0]], XE[cones[1]], XE[cones[2]]]
+    YE = [YE[cones[0]], YE[cones[1]], YE[cones[2]]]
     
-    ind = 0
-    redXE = XE[color_ind[ind:ratio[0]]]
-    redYE = YE[color_ind[ind:ratio[0]]] 
-    #print color_ind[ind:ratio[0]]
-    
-    ind += ratio[0]
-    greenXE = XE[color_ind[ind:ind+ratio[1]]]
-    greenYE = YE[color_ind[ind:ind+ratio[1]]] 
-    #print color_ind[ind:ind+ratio[1]]
-    
-    ind += ratio[1]
-    blueXE = XE[color_ind[ind:-1]]
-    blueYE = YE[color_ind[ind:-1]] 
-    #print color_ind[ind:-1]
-
-    XE = [redXE, greenXE, blueXE]
-    YE = [redYE, greenYE, blueYE]
     return XE, YE
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     #for i in range(10):i
-    XE, YE = gen_hex_lattice(8.00, 0.5)
+    #XE, YE = gen_hex_lattice(8.00, 0.5)
+    XE, YE = gen_color_lattice(0.47, 0.47, 0.6, 7.00, 0.5)
     
     # Trichromatic
     #fig, ax = plt.subplots(2,2)

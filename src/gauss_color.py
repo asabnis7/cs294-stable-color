@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 import utils.particle_filter as pf
 from utils.particle_filter import LikelihoodPotential
-from utils.hex_lattice import gen_hex_lattice
+from utils.hex_lattice import gen_hex_lattice, gen_color_lattice
 from utils.path_generator import (DiffusionPathGenerator,
                                   ExperimentalPathGenerator)
 
@@ -13,6 +13,7 @@ class EMGauss(object):
     """Produce spikes and infer underlying causes."""
 
     def __init__(self,
+    			 test,
                  l_i,
                  motion_gen,
                  motion_prior,
@@ -24,11 +25,27 @@ class EMGauss(object):
                  l_n,
                  sig_obs,
                  rf_ratio=0.203,
-                 dt=0.001,
+                 dt=0.01,
+                 r=0.47,
+                 g=0.47,
+                 b=0.6,
                  neuron_layout='hex'):
 
         xs, ys, n_pix = self.init_pix_centers(l_i=l_i, ds=ds)
-        xe, ye, n_n = self.init_rf_centers(mode=neuron_layout, l_n=l_n, de=de)
+        xe, ye, n_n = self.init_rf_centers(mode=neuron_layout, l_n=l_n, de=de, r=r, g=g, b=b)
+
+        if test == 'red':
+        	xe, ye, n_n = xe[0], ye[0], n_n[0]
+        elif test == 'green':
+        	xe, ye, n_n = xe[1], ye[1], n_n[1]
+        elif test == 'redgreen':
+        	n_n = n_n[0] + n_n[1]
+        	xe, ye = np.concatenate(xe).ravel(), np.concatenate(ye).ravel()
+        	xe, ye = xe[0:n_n], ye[0:n_n]
+        elif test == 'blue':
+        	xe, ye, n_n = xe[2], ye[2], n_n[2]
+        else:
+        	xe, ye, n_n = np.concatenate(xe).ravel(), np.concatenate(ye).ravel(), sum(n_n)
 
         # FIMXE: make i,j tensor
         var_s = np.ones((1,), dtype='float32') * (
@@ -97,7 +114,7 @@ class EMGauss(object):
         return xs, ys, n_pix
 
     @staticmethod
-    def init_rf_centers(mode, l_n, de):
+    def init_rf_centers(mode, l_n, de, r, g, b):
         """
         Initialize the receptive field centers.
 
@@ -126,11 +143,18 @@ class EMGauss(object):
             xe, ye = gen_hex_lattice(l_n * de, a=de)
             n_n = xe.size
             xe, ye = [xy + (np.random.rand(n_n) - 0.5) * de * 0.25
-                      for xy in [xe, ye]]
+                      for xy in [xe, ye]] # jitters cone lattice
+        elif mode == 'hex_color':
+            xe, ye = gen_color_lattice(r, g, b, l_n * de, a=de)
+            n_n = [xe[0].size, xe[1].size, xe[2].size]
+            for i in range(0,3):
+            	xe[i], ye[i] = [xy + (np.random.rand(n_n[i]) - 0.5) * de * 0.25 
+            					for xy in [xe[i], ye[i]]] # jitters cone lattice
+            	#xe[i], ye[i] = np.asarray(xe[i], dtype=np.float32), np.asarray(ye[i], dtype=np.float32)
         else:
             raise ValueError('Unrecognized Neuron Mode {}'.format(mode))
-        xe, ye = xe.astype('float32'), ye.astype('float32')
-        n_n = xe.size
+        #xe, ye = xe.astype('float32'), ye.astype('float32')
+        #n_n = xe.size
         return xe, ye, n_n
 
     def gen_data(self, s_gen, pg=None):
@@ -483,7 +507,7 @@ class TFBackend(object):
         #########################
         # Generate measurements #
         #########################
-        t_xr_gen, t_yr_gen = [tf.placeholder('float32', shape=(1, n_t), name=name)
+        t_xr_gen, t_yr_gen = [tf.compat.v1.placeholder('float32', shape=(1, n_t), name=name)
                               for name in ['xr', 'yr']]  # p, t
 
         # i, j, b, t
@@ -493,17 +517,17 @@ class TFBackend(object):
                                 t_var=t_var_s)
 
 
-        t_s_gen = tf.placeholder('float32', shape=(n_pix,), name='s_gen')
+        t_s_gen = tf.compat.v1.placeholder('float32', shape=(n_pix,), name='s_gen')
 
         # j, p, t
-        t_eps = tf.placeholder('float32', shape=(n_sensors, 1, None),
+        t_eps = tf.compat.v1.placeholder('float32', shape=(n_sensors, 1, None),
                                name='eps')
         t_m_gen = _calc_m_gen(t_s_gen, t_t_gen, t_var_m, t_eps)
 
         ################################
         # Generate inference equations #
         ################################
-        t_xr, t_yr = [tf.placeholder('float32', shape=(n_p, None), name=name)
+        t_xr, t_yr = [tf.compat.v1.placeholder('float32', shape=(n_p, None), name=name)
                       for name in ['xr', 'yr']]  # p, t
 
         # i, j, b, t
@@ -513,9 +537,9 @@ class TFBackend(object):
                             t_var=t_var_s)
 
 
-        t_w = tf.placeholder('float32', shape=(n_p, None), name='w')  # p, t
-        t_m = tf.placeholder('float32', shape=(n_sensors, None), name='m')  # j, t
-        t_s_inf = tf.placeholder('float32', shape=(n_pix,), name='s_inf')
+        t_w = tf.compat.v1.placeholder('float32', shape=(n_p, None), name='w')  # p, t
+        t_m = tf.compat.v1.placeholder('float32', shape=(n_sensors, None), name='m')  # j, t
+        t_s_inf = tf.compat.v1.placeholder('float32', shape=(n_pix,), name='s_inf')
 
         t_a = _calc_a(t_w, t_t)
         t_b = _calc_b(t_w, t_m, t_t)
@@ -524,8 +548,8 @@ class TFBackend(object):
         t_e = _calc_batched_e(t_m, t_s_inf, t_t, t_var_m)
 
         # Initialize variables
-        init_op = tf.global_variables_initializer()
-        self.sess = tf.Session()
+        init_op = tf.compat.v1.global_variables_initializer()
+        self.sess = tf.compat.v1.Session()
         with self.sess.as_default():
             self.sess.run(init_op)
 
