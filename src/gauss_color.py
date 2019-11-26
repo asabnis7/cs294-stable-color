@@ -5,15 +5,14 @@ import tensorflow as tf
 import utils.particle_filter as pf
 from utils.particle_filter import LikelihoodPotential
 from utils.hex_lattice import gen_hex_lattice, gen_color_lattice
-from utils.path_generator import (DiffusionPathGenerator,
-                                  ExperimentalPathGenerator)
+from utils.path_generator import DiffusionPathGenerator, ExperimentalPathGenerator 
 
 
 class EMGauss(object):
     """Produce spikes and infer underlying causes."""
 
     def __init__(self,
-    			 test,
+    		 test,
                  l_i,
                  motion_gen,
                  motion_prior,
@@ -24,8 +23,8 @@ class EMGauss(object):
                  print_mode,
                  l_n,
                  sig_obs,
+                 dt,
                  rf_ratio=0.203,
-                 dt=0.01,
                  r=0.47,
                  g=0.47,
                  b=0.6,
@@ -34,25 +33,34 @@ class EMGauss(object):
         xs, ys, n_pix = self.init_pix_centers(l_i=l_i, ds=ds)
         xe, ye, n_n = self.init_rf_centers(mode=neuron_layout, l_n=l_n, de=de, r=r, g=g, b=b)
 
-        if test == 'red':
-        	xe, ye, n_n = xe[0], ye[0], n_n[0]
+        self.xe, self.ye, self.n_n = xe, ye, n_n
+
+        if test == 'all':
+            pass
+        elif test == 'red':
+            xe, ye, n_n = xe[0], ye[0], n_n[0]
         elif test == 'green':
-        	xe, ye, n_n = xe[1], ye[1], n_n[1]
+            xe, ye, n_n = xe[1], ye[1], n_n[1]
         elif test == 'redgreen':
-        	n_n = n_n[0] + n_n[1]
-        	xe, ye = np.concatenate(xe).ravel(), np.concatenate(ye).ravel()
-        	xe, ye = xe[0:n_n], ye[0:n_n]
+            n_n = n_n[0] + n_n[1]
+            xe, ye = np.concatenate(xe).ravel(), np.concatenate(ye).ravel()
+            xe, ye = xe[0:n_n], ye[0:n_n]
         elif test == 'blue':
-        	xe, ye, n_n = xe[2], ye[2], n_n[2]
+            xe, ye, n_n = xe[2], ye[2], n_n[2]
         else:
-        	xe, ye, n_n = np.concatenate(xe).ravel(), np.concatenate(ye).ravel(), sum(n_n)
+            xe, ye, n_n = np.concatenate(xe).ravel(), np.concatenate(ye).ravel(), sum(n_n)
 
         # FIMXE: make i,j tensor
         var_s = np.ones((1,), dtype='float32') * (
             (0.5 * ds) ** 2 + (rf_ratio * de) ** 2)
-        var_m = np.ones((n_n,), dtype='float32') * sig_obs ** 2
+        if test == 'all':
+            var_m = [np.ones((n_n[0],), dtype='float32') * sig_obs ** 2,
+                     np.ones((n_n[1],), dtype='float32') * sig_obs ** 2,
+                     np.ones((n_n[2],), dtype='float32') * sig_obs ** 2];
+        else: 
+            var_m = np.ones((n_n,), dtype='float32') * sig_obs ** 2
 
-        self.pg = self.init_path_generator(motion_gen, n_t=n_t, dt=dt)
+        #self.pg = self.init_path_generator(motion_gen, n_t=n_t, dt=dt)
         self.tb = TFBackend(xs, ys, xe, ye, var_s, var_m, n_t=n_t, n_p=n_p)
         self.pf = self.init_particle_filter(
             motion_prior=motion_prior, n_p=n_p, dt=dt, n_n=n_n, n_t=n_t)
@@ -157,7 +165,7 @@ class EMGauss(object):
         #n_n = xe.size
         return xe, ye, n_n
 
-    def gen_data(self, s_gen, pg=None):
+    def gen_data(self, s_gen, pg=None, path=None):
         """
         Generate data given an image.
 
@@ -175,7 +183,8 @@ class EMGauss(object):
         """
         if pg is None:
             pg = self.pg
-        path = pg.gen_path()
+        if path is None:
+            path = pg.gen_path()
         xr = path[0]
         yr = path[1]
         m = self.tb.get_m(path[0], path[1], s_gen)
