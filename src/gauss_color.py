@@ -45,6 +45,10 @@ class EMGauss(object):
             n_n = n_n[0] + n_n[1]
             xe, ye = np.concatenate(xe).ravel(), np.concatenate(ye).ravel()
             xe, ye = xe[0:n_n], ye[0:n_n]
+        elif test == 'greenblue':
+            xe, ye = np.concatenate(xe).ravel(), np.concatenate(ye).ravel()
+            xe, ye = xe[n_n[0]:sum(n_n)], ye[n_n[0]:sum(n_n)]
+            n_n = n_n[1] + n_n[2]
         elif test == 'blue':
             xe, ye, n_n = xe[2], ye[2], n_n[2]
         else:

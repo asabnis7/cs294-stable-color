@@ -69,17 +69,18 @@ if __name__ == '__main__':
     XE, YE = gen_color_lattice(0.47, 0.47, 0.06, 7.00, 0.5)
     
     # Trichromatic
-    #fig, ax = plt.subplots(2,2)
-    #ax[0,0].scatter(XE[0], YE[0], color='red')
-    #ax[0,1].scatter(XE[1], YE[1], color='green')
-    #ax[1,0].scatter(XE[2], YE[2], color='blue')
-    #ax[1,1].scatter(XE[0], YE[0], color='red')
-    #ax[1,1].scatter(XE[1], YE[1], color='green')
-    #ax[1,1].scatter(XE[2], YE[2], color='blue')
-    #ax[0,0].set_aspect('equal')
-    #ax[0,1].set_aspect('equal')
-    #ax[1,0].set_aspect('equal')
-    #ax[1,1].set_aspect('equal')
+    fig, ax = plt.subplots(2,2)
+    ax[0,0].scatter(XE[0], YE[0], color='red')
+    ax[0,1].scatter(XE[1], YE[1], color='green')
+    ax[1,0].scatter(XE[2], YE[2], color='blue')
+    ax[1,1].scatter(XE[0], YE[0], color='red')
+    ax[1,1].scatter(XE[1], YE[1], color='green')
+    ax[1,1].scatter(XE[2], YE[2], color='blue')
+    ax[0,0].set_aspect('equal')
+    ax[0,1].set_aspect('equal')
+    ax[1,0].set_aspect('equal')
+    ax[1,1].set_aspect('equal')
+    plt.show()
 
     # Deuteranope
     #fig, ax = plt.subplots(1,3)
@@ -93,10 +94,10 @@ if __name__ == '__main__':
 
     #plt.show()
 
-    plt.scatter(XE[0], YE[0], color='red')
-    plt.scatter(XE[1], YE[1], color='green')
-    plt.scatter(XE[2], YE[2], color='blue')
-    plt.axes().set_aspect('equal')
-    plt.show()
+    #plt.scatter(XE[0], YE[0], color='red')
+    #plt.scatter(XE[1], YE[1], color='green')
+    #plt.scatter(XE[2], YE[2], color='blue')
+    #plt.axes().set_aspect('equal')
+    #plt.show()
 
 #    idx = (-w < XE) * (XE < w) * (-w < YE) * (YE < w)

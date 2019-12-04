@@ -235,10 +235,3 @@ def get_snr_list(s_gen, estimates, xyr, xyr_est, xs, ys, ds):
     var = (0.5 * ds) ** 2
     return [snr_one_iteration(s_gen, s_est, xyr, xyr_est, xs, ys, q, var=var)
             for q, s_est in enumerate(estimates)]
-
-
-
-
-
-
-
